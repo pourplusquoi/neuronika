@@ -1,41 +1,34 @@
-use ndarray::Ix2;
-use neuronika::{
-    data::DataLoader,
-    nn::{loss, Learnable, Linear, ModelStatus},
-    optim, Data, Gradient, MatMatMulT, Param, VarDiff,
-};
+use ndarray::{Ix1, Ix2};
+use neuronika::{data::DataLoader, nn::Linear, optim, MatMatMulT, Reduction, VarDiff};
 
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 struct NeuralNetwork {
     lin1: Linear,
     lin2: Linear,
     lin3: Linear,
-    #[cfg_attr(feature = "serialize", serde(skip))]
-    status: ModelStatus,
 }
 
 impl NeuralNetwork {
-    fn new() -> Self {
-        let mut status = ModelStatus::default();
-
-        Self {
-            lin1: status.register(Linear::new(3, 5)),
-            lin2: status.register(Linear::new(5, 5)),
-            lin3: status.register(Linear::new(5, 1)),
-            status,
-        }
-    }
-
-    fn parameters(&self) -> Vec<Param> {
-        self.status.parameters()
-    }
-
-    fn forward<I, T, U>(&self, input: I) -> VarDiff<impl Data<Dim = Ix2>, impl Gradient<Dim = Ix2>>
+    fn parameters<T>(&self, optimizer: &optim::Optimizer<T>)
     where
-        I: MatMatMulT<Learnable<Ix2>>,
-        I::Output: Into<VarDiff<T, U>>,
-        T: Data<Dim = Ix2>,
-        U: Gradient<Dim = Ix2>,
+        T: optim::OptimizerStatus,
+        VarDiff<Ix2>: optim::IntoParam<T>,
+        VarDiff<Ix1>: optim::IntoParam<T>,
+    {
+        optimizer.register(self.lin1.weight.clone());
+        optimizer.register(self.lin1.bias.clone());
+
+        optimizer.register(self.lin2.weight.clone());
+        optimizer.register(self.lin2.bias.clone());
+
+        optimizer.register(self.lin3.weight.clone());
+        optimizer.register(self.lin3.bias.clone());
+    }
+
+    fn forward<I>(&self, input: I) -> VarDiff<Ix2>
+    where
+        I: MatMatMulT<VarDiff<Ix2>>,
+        I::Output: Into<VarDiff<Ix2>>,
     {
         let out1 = self.lin1.forward(input).relu();
         let out2 = self.lin2.forward(out1).relu();
@@ -45,12 +38,7 @@ impl NeuralNetwork {
 
 /// Loads model from a string.
 fn load_model() -> NeuralNetwork {
-    let NeuralNetwork {
-        lin1,
-        lin2,
-        lin3,
-        mut status,
-    } = serde_json::from_str(
+    serde_json::from_str::<NeuralNetwork>(
         r#"
         {
             "lin1":{
@@ -168,14 +156,7 @@ fn load_model() -> NeuralNetwork {
             }
          }"#,
     )
-    .unwrap();
-
-    NeuralNetwork {
-        lin1: status.register(lin1),
-        lin2: status.register(lin2),
-        lin3: status.register(lin3),
-        status,
-    }
+    .unwrap()
 }
 
 fn main() {
@@ -206,7 +187,8 @@ fn main() {
     let model = load_model();
 
     // Creates the optimizer.
-    let optimizer = optim::SGD::new(model.parameters(), 0.01, optim::L2::new(0.0));
+    let optimizer = optim::StochasticGD::new(0.01, optim::L2::new(0.0), None, None, false);
+    model.parameters(&optimizer);
 
     // Trains the model.
     for epoch in 0..5 {
@@ -219,7 +201,7 @@ fn main() {
 
             let result = model.forward(input);
 
-            let loss = loss::mse_loss(result.clone(), target.clone(), loss::Reduction::Mean);
+            let loss = result.mse(target, Reduction::Mean);
             loss.forward();
             total_loss += loss.data()[()];
             loss.backward(1.0);

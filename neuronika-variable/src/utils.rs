@@ -154,7 +154,10 @@ where
     D: Dimension,
     E: Dimension,
 {
-    debug_assert!(target.ndim() <= source.ndim());
+    let source_dims = source.ndim();
+    let target_dims = target.ndim();
+
+    debug_assert!(target_dims <= source_dims);
 
     if source.shape() == target.shape() {
         *target += source;
@@ -162,7 +165,6 @@ where
     }
 
     // Computes the difference between the number of dimensions
-    let target_dims = target.ndim();
     let source_shape = source.shape();
     let k = source_shape.len() - target_dims;
     let mut reshape = D::Larger::zeros(target_dims + 1);
@@ -176,10 +178,9 @@ where
 
     // Reshapes such that the sub-views match the dimensionality of target
     let view = source.view().into_shape(reshape).unwrap();
-    let axis = Axis(target_dims - 1);
-    let mut lanes_v = view.lanes(axis).into_iter();
+    let mut lanes_v = view.lanes(Axis(source_dims - 1)).into_iter();
     while lanes_v.len() > 0 {
-        for mut lane_t in target.lanes_mut(axis) {
+        for mut lane_t in target.lanes_mut(Axis(target_dims - 1)) {
             if let Some(lane_v) = lanes_v.next() {
                 if lane_t.len() == 1 {
                     lane_t[0] += lane_v.sum();

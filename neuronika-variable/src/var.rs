@@ -1084,7 +1084,7 @@ impl MatMatMulT<VarDiff<Ix2>> for Var<Ix2> {
     fn mm_t(self, rhs: VarDiff<Ix2>) -> Self::Output {
         let grad = Rc::new(Gradient::ndarray_zeros(DotDim::shape(
             self.data.borrow().raw_dim(),
-            rhs.var.data().raw_dim(),
+            rhs.var.data().t().raw_dim(),
         )));
         let op = MatrixMatrixMulTBackwardRight::new(self.data.clone(), rhs.grad, grad.clone());
         let var = self.mm_t(rhs.var);

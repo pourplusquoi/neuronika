@@ -11,6 +11,7 @@ neuronika-core = {version = "*", path = "../neuronika-core"}
 neuronika-variable = {version = "*", path = "../neuronika-variable"}
 rand = "0.8.4"
 rand_distr = "0.4.2"
+serde = "1.0.130"
 
 [features]
 serialize = ["neuronika-variable/serialize"]

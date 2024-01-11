@@ -1130,7 +1130,7 @@ impl MatMatMulT<VarDiff<Ix2>> for VarDiff<Ix2> {
 
         let grad = Rc::new(Gradient::ndarray_zeros(DotDim::shape(
             self.var.data().raw_dim(),
-            rhs.var.data().raw_dim(),
+            rhs.var.data().t().raw_dim(),
         )));
         let left = MatrixMatrixMulTBackwardLeft::new(self.grad, rhs.var.data.clone(), grad.clone());
         let right =

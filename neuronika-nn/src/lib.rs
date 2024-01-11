@@ -709,7 +709,7 @@ where
     /// * **Lk** is the **length** of the kernel
     ///
     /// The resulting output shape will be *(N, Cout, Lout)*
-    pub fn forward<I>(&self, input: I) -> VarDiff<Ix3>
+    pub fn forward<I>(&self, _input: I) -> VarDiff<Ix3>
     where
         VarDiff<Ix3>: Convolution<I, Ix3>,
     {
@@ -806,7 +806,7 @@ where
     /// * **Wk** is the **width** of the kernel
     ///
     /// The resulting output shape will be *(N, Cout, Hout, Wout)*
-    pub fn forward<I>(&self, input: I) -> VarDiff<Ix4>
+    pub fn forward<I>(&self, _input: I) -> VarDiff<Ix4>
     where
         VarDiff<Ix4>: Convolution<I, Ix4>,
     {
@@ -906,7 +906,7 @@ where
     /// * **Wk** is the **width** of the kernel
     ///
     /// The resulting output shape will be *(N, Cout, Dout, Hout, Wout)*
-    pub fn forward<I>(&self, input: I) -> VarDiff<Ix5>
+    pub fn forward<I>(&self, _input: I) -> VarDiff<Ix5>
     where
         VarDiff<Ix5>: Convolution<I, Ix5>,
         <VarDiff<Ix5> as Convolution<I, Ix5>>::Output: Into<VarDiff<Ix5>>,

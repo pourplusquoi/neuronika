@@ -192,6 +192,7 @@
 // #![doc(
 //     html_favicon_url = "https://raw.githubusercontent.com/neuronika/neuronika/main/misc/neuronika_brain.ico"
 // )]
+pub use neuronika_core::*;
 pub use neuronika_variable::*;
 
 pub mod optim {
